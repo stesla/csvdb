@@ -40,6 +40,7 @@ class Connection:
 
 class Cursor:
     arraysize = 1
+    __iter = None
     __result = None
 
     def __init__(self, tables):
@@ -66,20 +67,35 @@ class Cursor:
             operation,
             tables=self.__tables
         )
+        self.__iter = iter(self.__result)
 
     def executemany(self, operation, seq_of_parameters):
         raise NotSupportedError
 
     def fetchone(self):
-        if self.__result is None:
+        if self.__iter is None:
             raise ProgrammingError
-        return next(self.__result.rows)
+        try:
+            row = next(self.__iter)
+            return tuple(row[col] for col in self.__result.columns)
+        except StopIteration:
+            self.__reset()
+            return None
 
     def fetchmany(self, pagesize=None):
         raise NotSupportedError
 
     def fetchall(self):
-        return iter(row for row in self.__result.rows)
+        if self.__result is None:
+            raise ProgrammingError
+        try:
+            return self.__result.rows[self.__iter.index+1:]
+        finally:
+            self.__reset()
+
+    def __reset(self):
+        self.__result = None
+        self.__iter = None
 
 
 class csv_table:

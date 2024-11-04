@@ -4,13 +4,16 @@ from pathlib import Path
 from sqlglot.executor import execute
 
 
-def connect(dir):
-    return Connection(dir)
+paramstyle = 'pyformat'
+
+
+def connect(database):
+    return Connection(database)
 
 
 class Connection:
     def __init__(self, dir):
-        self.__paths = Path(dir).glob("*.csv")
+        self.__paths = tuple(Path(dir).glob("*.csv"))
 
     def __del__(self):
         self.close()
@@ -63,8 +66,9 @@ class Cursor:
             table.close()
 
     def execute(self, operation, parameters=None):
+        query = _bind_parameters(operation, parameters)
         self.__result = execute(
-            operation,
+            query,
             tables=self.__tables
         )
         self.__iter = iter(self.__result)
@@ -97,6 +101,14 @@ class Cursor:
         self.__result = None
         self.__iter = None
 
+
+def _bind_parameters(query, parameters):
+    if not parameters:
+        return query
+    return query % {
+        k: f"'{v}'" if isinstance(v, str) else v
+        for k, v in parameters.items()
+    }
 
 class csv_table:
     def __init__(self, path):

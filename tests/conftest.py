@@ -2,7 +2,11 @@ import os
 
 import pytest
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
 import csvdb.dbapi as db
+import csvdb.sqlalchemy
 
 
 DBPATH = os.path.join(os.path.dirname(__file__), 'testdb')
@@ -13,3 +17,9 @@ def cursor():
     with db.connect(DBPATH) as conn:
         with conn.cursor() as cursor:
             yield cursor
+
+@pytest.fixture
+def session():
+    engine = create_engine(f'csvdb:///{DBPATH}')
+    with Session(engine) as session:
+        yield session

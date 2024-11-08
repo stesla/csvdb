@@ -1,5 +1,6 @@
 from csv import DictReader
 from pathlib import Path
+from typing import Iterable
 
 from sqlglot.executor import execute
 
@@ -13,6 +14,7 @@ def connect(database):
 
 class Connection:
     def __init__(self, dir):
+        self.__dir = dir
         self.__paths = tuple(Path(dir).glob("*.csv"))
 
     def __del__(self):
@@ -39,6 +41,14 @@ class Connection:
             for path in self.__paths
         }
         return Cursor(tables)
+
+    def get_columns(self, table_name):
+        path = Path(self.__dir).joinpath(table_name).with_suffix('.csv')
+        with csv_table(path) as table:
+            return [(name, STRING) for name in table.columns]
+
+    def get_table_names(self):
+        return [path.stem for path in self.__paths]
 
 
 class Cursor:
@@ -112,18 +122,44 @@ def _bind_parameters(query, parameters):
 
 
 class csv_table:
-    def __init__(self, path):
-        self.__file = open(path)
-
-    def __iter__(self):
-        self.__file.seek(0)
-        return DictReader(self.__file)
+    __file: Iterable[str] = None
+    __reader: DictReader = None
 
     def __del__(self):
         self.close()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def __init__(self, path):
+        self.__path = path
+
+    def __iter__(self):
+        return self.reader
+
+    @property
+    def columns(self):
+        return self.reader.fieldnames
+
+    @property
+    def file(self):
+        if not self.__file or self.__file.closed:
+            self.__file = open(self.__path)
+        return self.__file
+
+    @property
+    def reader(self):
+        if not self.__reader:
+            self.file.seek(0)
+            self.__reader = DictReader(self.file)
+        return self.__reader
+
     def close(self):
-        self.__file.close()
+        if self.__file:
+            self.__file.close()
 
 
 class Error(Exception):

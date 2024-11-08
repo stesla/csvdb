@@ -1,6 +1,13 @@
 import datetime
 
-from sqlalchemy import select, type_coerce, Table, Column, String
+from sqlalchemy import (
+    select,
+    type_coerce,
+    MetaData,
+    Table,
+    Column,
+    String,
+)
 from sqlalchemy.orm import declarative_base
 
 from csvdb.sqlalchemy import Date, Datetime, Float, Integer
@@ -52,3 +59,42 @@ def test_type_coerce(session):
             )
         ).one()
         assert actual.value == expected
+
+
+def test_inspect_get_table_names(inspector):
+    assert inspector.get_table_names() == ['data', 'users']
+
+
+def test_inspect_get_columns(inspector):
+    columns = inspector.get_columns('users')
+    expected = [
+        ('id', String),
+        ('username', String),
+        ('first_name', String),
+        ('last_name', String),
+    ]
+    assert [(c['name'], type(c['type'])) for c in columns] == expected
+
+
+def test_inspect_has_table(inspector):
+    assert inspector.has_table('data')
+    assert inspector.has_table('users')
+    assert not inspector.has_table('absent')
+
+
+def test_reflect_tables(session):
+    engine = session.bind.engine
+    metadata = MetaData()
+    metadata.reflect(engine)
+
+    def names(table_name):
+        return [c.name for c in metadata.tables[table_name].c]
+
+    def types(table_name):
+        return [c.type for c in metadata.tables[table_name].c]
+
+    assert [t.name for t in metadata.sorted_tables] == ['data', 'users']
+    assert names('data') == ['key', 'value']
+    assert names('users') == ['id', 'username', 'first_name', 'last_name']
+    assert all(isinstance(t, String) for t in types('data'))
+    assert all(isinstance(t, String) for t in types('users'))

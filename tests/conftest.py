@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 import csvdb.dbapi as db
-import csvdb.sqlalchemy
+import csvdb.sqlalchemy  # noqa: F401
 
 
 DBPATH = os.path.join(os.path.dirname(__file__), 'testdb')
@@ -17,6 +17,7 @@ def cursor():
     with db.connect(DBPATH) as conn:
         with conn.cursor() as cursor:
             yield cursor
+
 
 @pytest.fixture
 def session():

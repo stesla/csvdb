@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import select, type_coerce, Table, Column, String, MetaData
+from sqlalchemy import select, type_coerce, Table, Column, String
 from sqlalchemy.orm import declarative_base
 
 from csvdb.sqlalchemy import Date, Datetime, Float, Integer
@@ -16,6 +16,7 @@ class User(Base):
     first_name = Column(String)
     last_name = Column(String)
 
+
 data_table = Table(
     'data',
     Base.metadata,
@@ -23,13 +24,16 @@ data_table = Table(
     Column('value', String),
 )
 
+
 def test_simple_query(session):
     result = session.query(User).all()
     assert [u.first_name for u in result] == ['Alice', 'Bob', 'Eve']
 
+
 def test_integer_column(session):
     result = session.query(User).all()
     assert [u.id for u in result] == [1, 2, 3]
+
 
 def test_type_coerce(session):
     tests = [

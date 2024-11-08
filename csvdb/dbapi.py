@@ -110,6 +110,7 @@ def _bind_parameters(query, parameters):
         for k, v in parameters.items()
     }
 
+
 class csv_table:
     def __init__(self, path):
         self.__file = open(path)

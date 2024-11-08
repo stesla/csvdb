@@ -12,7 +12,7 @@ registry.register('csvdb', __name__, 'Dialect')
 class Dialect(default.DefaultDialect):
     name = 'csvdb'
     driver = 'csvdb'
-    
+
     supports_statement_cache = False
 
     @classmethod
@@ -33,6 +33,7 @@ class Date(ParsedType):
 class Datetime(ParsedType):
     def process_result_value(self, value, dialect):
         return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+
 
 class Float(ParsedType):
     def process_result_value(self, value, dialect):
